@@ -20,6 +20,7 @@ class ChatBot {
         this.dbVersion = 1;
         this.isInitialized = false;
         this.messages = null; // Will store messages container reference
+        this.isListening = false; // For speech recognition state
         
         this.initDB().then(() => {
             this.isInitialized = true;
@@ -326,6 +327,47 @@ class ChatBot {
                 background: #d16218;
             }
 
+            .mic-button {
+                background: #f05730;
+                color: white;
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+
+            .mic-button:hover {
+                background: #d16218;
+            }
+
+            .mic-button.listening {
+                background: #d16218;
+                animation: pulse 1.5s infinite;
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            .mic-button svg {
+                width: 20px;
+                height: 20px;
+                fill: white;
+            }
+
             .message {
                 margin-bottom: 10px;
                 max-width: 80%;
@@ -404,6 +446,11 @@ class ChatBot {
                 <div class="chatbot-messages"></div>
                 <div class="chatbot-input">
                     <input type="text" placeholder="Type your message...">
+                    <button class="mic-button" title="Speak your message">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                        </svg>
+                    </button>
                     <button>Send</button>
                 </div>
             </div>
@@ -415,8 +462,40 @@ class ChatBot {
         const window = widget.querySelector('.chatbot-window');
         const close = widget.querySelector('.chatbot-close');
         const input = widget.querySelector('input');
-        const send = widget.querySelector('button');
+        const send = widget.querySelector('button:not(.mic-button)');
+        const micButton = widget.querySelector('.mic-button');
         this.messages = widget.querySelector('.chatbot-messages');
+
+        // Initialize speech recognition
+        let recognition = null;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'id-ID'; // Set to Indonesian language
+
+            recognition.onstart = () => {
+                this.isListening = true;
+                micButton.classList.add('listening');
+            };
+
+            recognition.onend = () => {
+                this.isListening = false;
+                micButton.classList.remove('listening');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                input.value = transcript;
+                sendMessage();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                this.isListening = false;
+                micButton.classList.remove('listening');
+            };
+        }
 
         // Toggle chat window
         icon.addEventListener('click', async () => {
@@ -448,7 +527,7 @@ class ChatBot {
 
                 // Add to history
                 this.chatHistory.push({ role: 'user', content: text });
-                await this.saveChatHistory(); // Save after adding user message
+                await this.saveChatHistory();
 
                 // Add loading message
                 const loadingMessage = document.createElement('div');
@@ -487,7 +566,7 @@ class ChatBot {
 
                     // Add to history
                     this.chatHistory.push({ role: 'bot', content: data[0]?.aiResponse || "Tidak ada balasan." });
-                    await this.saveChatHistory(); // Save after adding bot response
+                    await this.saveChatHistory();
                 } catch (err) {
                     // Remove loading message
                     this.messages.removeChild(loadingMessage);
@@ -500,13 +579,27 @@ class ChatBot {
 
                     // Add to history
                     this.chatHistory.push({ role: 'bot', content: "Gagal terhubung ke server." });
-                    await this.saveChatHistory(); // Save after adding error message
+                    await this.saveChatHistory();
                 }
 
                 // Scroll to bottom
                 this.messages.scrollTop = this.messages.scrollHeight;
             }
         };
+
+        // Handle mic button click
+        micButton.addEventListener('click', () => {
+            if (!recognition) {
+                alert('Speech recognition is not supported in your browser.');
+                return;
+            }
+
+            if (this.isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
 
         send.addEventListener('click', sendMessage);
         input.addEventListener('keypress', (e) => {
