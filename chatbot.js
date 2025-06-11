@@ -445,7 +445,6 @@ class ChatBot {
                     // Send message to webhook
                     const res = await fetch("https://hook.gugusdarmayanto.my.id/webhook/0a4ca5b0-3d99-43d8-abca-ad792570f670", {
                         method: "POST",
-                        credentials: "include",
                         body: JSON.stringify([{
                             sessionId: this.currentSessionId,
                             action: "sendMessage",
