@@ -263,9 +263,12 @@ class ChatBot {
             }
 
             .chatbot-header .avatar img {
-                width: 100%;
-                height: 100%;
+                width: 200%;
+                height: 200%;
                 object-fit: cover;
+                object-position: center top;
+                transform: scale(0.5);
+                transform-origin: top center;
             }
 
             .chatbot-header .title {
