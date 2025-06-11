@@ -24,6 +24,7 @@ class ChatBot {
         this.synth = window.speechSynthesis; // For text-to-speech
         this.isSpeaking = false; // For TTS state
         this.voices = []; // Store available voices
+        this.speechQueue = []; // Queue for speech synthesis
         
         // Initialize speech synthesis
         if (this.synth) {
@@ -205,16 +206,32 @@ class ChatBot {
             return;
         }
 
-        // Cancel any ongoing speech
-        this.synth.cancel();
+        // Add to queue
+        this.speechQueue.push(text);
+        
+        // If not speaking, start processing queue
+        if (!this.isSpeaking) {
+            this.processSpeechQueue();
+        }
+    }
 
+    processSpeechQueue() {
+        if (this.speechQueue.length === 0) {
+            this.isSpeaking = false;
+            return;
+        }
+
+        // Get next text from queue
+        const text = this.speechQueue.shift();
+        
+        // Create new utterance
         const utterance = new SpeechSynthesisUtterance(text);
         
         // Set language to Indonesian
         utterance.lang = 'id-ID';
         
         // Configure speech parameters
-        utterance.rate = 1.0; // Normal speed
+        utterance.rate = 0.9; // Slightly slower speed
         utterance.pitch = 1.0; // Normal pitch
         utterance.volume = 1.0; // Full volume
 
@@ -236,25 +253,49 @@ class ChatBot {
 
         // Event handlers
         utterance.onstart = () => {
-            console.log('Started speaking');
+            console.log('Started speaking:', text);
             this.isSpeaking = true;
         };
 
         utterance.onend = () => {
             console.log('Finished speaking');
-            this.isSpeaking = false;
+            // Process next in queue
+            this.processSpeechQueue();
         };
 
         utterance.onerror = (event) => {
             console.error('Speech synthesis error:', event);
-            this.isSpeaking = false;
+            // Try to recover from error
+            if (event.error === 'synthesis-failed') {
+                // Wait a bit and try again
+                setTimeout(() => {
+                    this.speechQueue.unshift(text); // Put text back at start of queue
+                    this.processSpeechQueue();
+                }, 1000);
+            } else {
+                // For other errors, just move to next in queue
+                this.processSpeechQueue();
+            }
         };
 
         // Speak the text
         try {
+            // Ensure speech synthesis is in a good state
+            if (this.synth.speaking) {
+                this.synth.cancel();
+            }
+            if (this.synth.paused) {
+                this.synth.resume();
+            }
+            
             this.synth.speak(utterance);
         } catch (error) {
             console.error('Error speaking text:', error);
+            // Try to recover
+            setTimeout(() => {
+                this.speechQueue.unshift(text);
+                this.processSpeechQueue();
+            }, 1000);
         }
     }
 
