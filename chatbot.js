@@ -260,15 +260,17 @@ class ChatBot {
                 font-weight: bold;
                 color: #f05730;
                 overflow: hidden;
+                position: relative;
             }
 
             .chatbot-header .avatar img {
-                width: 200%;
-                height: 200%;
+                width: 160%;
+                height: 160%;
                 object-fit: cover;
                 object-position: center top;
-                transform: scale(0.5);
                 transform-origin: top center;
+                position: absolute;
+                top: 0;
             }
 
             .chatbot-header .title {
