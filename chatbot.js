@@ -190,6 +190,7 @@ class ChatBot {
         const style = document.createElement('style');
         style.textContent = `
             @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
+            @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
 
             .chatbot-widget {
                 position: fixed;
@@ -362,10 +363,8 @@ class ChatBot {
                 }
             }
 
-            .mic-button svg {
-                width: 20px;
-                height: 20px;
-                fill: white;
+            .mic-button i {
+                font-size: 18px;
             }
 
             .message {
@@ -447,9 +446,7 @@ class ChatBot {
                 <div class="chatbot-input">
                     <input type="text" placeholder="Type your message...">
                     <button class="mic-button" title="Speak your message">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
-                        </svg>
+                        <i class="fas fa-microphone"></i>
                     </button>
                     <button>Send</button>
                 </div>
@@ -468,33 +465,47 @@ class ChatBot {
 
         // Initialize speech recognition
         let recognition = null;
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'id-ID'; // Set to Indonesian language
+        try {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'id-ID'; // Set to Indonesian language
 
-            recognition.onstart = () => {
-                this.isListening = true;
-                micButton.classList.add('listening');
-            };
+                recognition.onstart = () => {
+                    this.isListening = true;
+                    micButton.classList.add('listening');
+                };
 
-            recognition.onend = () => {
-                this.isListening = false;
-                micButton.classList.remove('listening');
-            };
+                recognition.onend = () => {
+                    this.isListening = false;
+                    micButton.classList.remove('listening');
+                };
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                input.value = transcript;
-                sendMessage();
-            };
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    input.value = transcript;
+                    sendMessage();
+                };
 
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                this.isListening = false;
-                micButton.classList.remove('listening');
-            };
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    this.isListening = false;
+                    micButton.classList.remove('listening');
+                    
+                    // Show error message to user
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'message bot';
+                    errorMessage.textContent = "Maaf, terjadi kesalahan saat mengenali suara. Silakan coba lagi atau ketik pesan Anda.";
+                    this.messages.appendChild(errorMessage);
+                };
+            } else {
+                micButton.style.display = 'none'; // Hide mic button if not supported
+            }
+        } catch (error) {
+            console.error('Speech recognition initialization error:', error);
+            micButton.style.display = 'none'; // Hide mic button if initialization fails
         }
 
         // Toggle chat window
