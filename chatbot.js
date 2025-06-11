@@ -388,7 +388,7 @@ class ChatBot {
                 <div class="chatbot-header">
                     <div class="header-content">
                         <div class="avatar">
-                            <img src="https://webshunter.github.io/cdn.github.io/ina.png" alt="INA Hubunk">
+                            <img src="https://webshunter.github.io/cdn.github.io/ina.png?v=image-${Date.now()}" alt="INA Hubunk">
                         </div>
                         <span class="title">INA Hubunk</span>
                     </div>
