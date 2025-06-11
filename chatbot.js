@@ -21,21 +21,6 @@ class ChatBot {
         this.isInitialized = false;
         this.messages = null; // Will store messages container reference
         this.isListening = false; // For speech recognition state
-        this.synth = window.speechSynthesis; // For text-to-speech
-        this.isSpeaking = false; // For TTS state
-        this.voices = []; // Store available voices
-        this.speechQueue = []; // Queue for speech synthesis
-        
-        // Initialize speech synthesis
-        if (this.synth) {
-            // Chrome loads voices asynchronously
-            this.synth.onvoiceschanged = () => {
-                this.voices = this.synth.getVoices();
-                console.log('Available voices:', this.voices);
-            };
-            // Get voices immediately if available
-            this.voices = this.synth.getVoices();
-        }
         
         this.initDB().then(() => {
             this.isInitialized = true;
@@ -198,105 +183,6 @@ class ChatBot {
         });
         // Scroll to bottom after rendering
         this.messages.scrollTop = this.messages.scrollHeight;
-    }
-
-    speakText(text) {
-        if (!this.synth) {
-            console.error('Speech synthesis not supported');
-            return;
-        }
-
-        // Add to queue
-        this.speechQueue.push(text);
-        
-        // If not speaking, start processing queue
-        if (!this.isSpeaking) {
-            this.processSpeechQueue();
-        }
-    }
-
-    processSpeechQueue() {
-        if (this.speechQueue.length === 0) {
-            this.isSpeaking = false;
-            return;
-        }
-
-        // Get next text from queue
-        const text = this.speechQueue.shift();
-        
-        // Create new utterance
-        const utterance = new SpeechSynthesisUtterance(text);
-        
-        // Set language to Indonesian
-        utterance.lang = 'id-ID';
-        
-        // Configure speech parameters
-        utterance.rate = 0.9; // Slightly slower speed
-        utterance.pitch = 1.0; // Normal pitch
-        utterance.volume = 1.0; // Full volume
-
-        // Try to find Indonesian voice
-        if (this.voices.length > 0) {
-            const indonesianVoice = this.voices.find(voice => 
-                voice.lang.includes('id-ID') || 
-                voice.lang.includes('id') || 
-                voice.name.includes('Indonesian')
-            );
-            
-            if (indonesianVoice) {
-                console.log('Using Indonesian voice:', indonesianVoice.name);
-                utterance.voice = indonesianVoice;
-            } else {
-                console.log('No Indonesian voice found, using default');
-            }
-        }
-
-        // Event handlers
-        utterance.onstart = () => {
-            console.log('Started speaking:', text);
-            this.isSpeaking = true;
-        };
-
-        utterance.onend = () => {
-            console.log('Finished speaking');
-            // Process next in queue
-            this.processSpeechQueue();
-        };
-
-        utterance.onerror = (event) => {
-            console.error('Speech synthesis error:', event);
-            // Try to recover from error
-            if (event.error === 'synthesis-failed') {
-                // Wait a bit and try again
-                setTimeout(() => {
-                    this.speechQueue.unshift(text); // Put text back at start of queue
-                    this.processSpeechQueue();
-                }, 1000);
-            } else {
-                // For other errors, just move to next in queue
-                this.processSpeechQueue();
-            }
-        };
-
-        // Speak the text
-        try {
-            // Ensure speech synthesis is in a good state
-            if (this.synth.speaking) {
-                this.synth.cancel();
-            }
-            if (this.synth.paused) {
-                this.synth.resume();
-            }
-            
-            this.synth.speak(utterance);
-        } catch (error) {
-            console.error('Error speaking text:', error);
-            // Try to recover
-            setTimeout(() => {
-                this.speechQueue.unshift(text);
-                this.processSpeechQueue();
-            }, 1000);
-        }
     }
 
     init() {
@@ -715,9 +601,6 @@ class ChatBot {
                     // Add to history
                     this.chatHistory.push({ role: 'bot', content: data[0]?.aiResponse || "Tidak ada balasan." });
                     await this.saveChatHistory();
-
-                    // Auto-speak the response
-                    this.speakText(data[0]?.aiResponse || "Tidak ada balasan.");
                 } catch (err) {
                     // Remove loading message
                     this.messages.removeChild(loadingMessage);
