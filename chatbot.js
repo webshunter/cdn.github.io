@@ -21,6 +21,8 @@ class ChatBot {
         this.isInitialized = false;
         this.messages = null; // Will store messages container reference
         this.isListening = false; // For speech recognition state
+        this.synth = window.speechSynthesis; // For text-to-speech
+        this.isSpeaking = false; // For TTS state
         
         this.initDB().then(() => {
             this.isInitialized = true;
@@ -183,6 +185,37 @@ class ChatBot {
         });
         // Scroll to bottom after rendering
         this.messages.scrollTop = this.messages.scrollHeight;
+    }
+
+    speakText(text) {
+        if (this.synth) {
+            // Cancel any ongoing speech
+            this.synth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID'; // Set to Indonesian
+            utterance.rate = 1.0; // Normal speed
+            utterance.pitch = 1.0; // Normal pitch
+            utterance.volume = 1.0; // Full volume
+
+            // Get available voices
+            const voices = this.synth.getVoices();
+            // Try to find Indonesian voice
+            const indonesianVoice = voices.find(voice => voice.lang.includes('id-ID'));
+            if (indonesianVoice) {
+                utterance.voice = indonesianVoice;
+            }
+
+            utterance.onstart = () => {
+                this.isSpeaking = true;
+            };
+
+            utterance.onend = () => {
+                this.isSpeaking = false;
+            };
+
+            this.synth.speak(utterance);
+        }
     }
 
     init() {
@@ -420,6 +453,29 @@ class ChatBot {
                 opacity: 0.7;
                 border: 1px solid #90bada;
             }
+
+            .message.bot .speak-button {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                color: #f05730;
+                cursor: pointer;
+                padding: 5px;
+                opacity: 0.6;
+                transition: opacity 0.2s;
+            }
+
+            .message.bot .speak-button:hover {
+                opacity: 1;
+            }
+
+            .message.bot .speak-button.speaking {
+                color: #d16218;
+                animation: pulse 1.5s infinite;
+            }
         `;
         document.head.appendChild(style);
 
@@ -578,6 +634,9 @@ class ChatBot {
                     // Add to history
                     this.chatHistory.push({ role: 'bot', content: data[0]?.aiResponse || "Tidak ada balasan." });
                     await this.saveChatHistory();
+
+                    // Auto-speak the response
+                    this.speakText(data[0]?.aiResponse || "Tidak ada balasan.");
                 } catch (err) {
                     // Remove loading message
                     this.messages.removeChild(loadingMessage);
