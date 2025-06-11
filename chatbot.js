@@ -188,12 +188,14 @@ class ChatBot {
         // Create and inject styles
         const style = document.createElement('style');
         style.textContent = `
+            @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
+
             .chatbot-widget {
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
                 z-index: 9999;
-                font-family: Arial, sans-serif;
+                font-family: 'Lato', Arial, sans-serif;
             }
 
             .chatbot-icon {
