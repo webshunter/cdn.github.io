@@ -23,6 +23,18 @@ class ChatBot {
         this.isListening = false; // For speech recognition state
         this.synth = window.speechSynthesis; // For text-to-speech
         this.isSpeaking = false; // For TTS state
+        this.voices = []; // Store available voices
+        
+        // Initialize speech synthesis
+        if (this.synth) {
+            // Chrome loads voices asynchronously
+            this.synth.onvoiceschanged = () => {
+                this.voices = this.synth.getVoices();
+                console.log('Available voices:', this.voices);
+            };
+            // Get voices immediately if available
+            this.voices = this.synth.getVoices();
+        }
         
         this.initDB().then(() => {
             this.isInitialized = true;
@@ -188,33 +200,61 @@ class ChatBot {
     }
 
     speakText(text) {
-        if (this.synth) {
-            // Cancel any ongoing speech
-            this.synth.cancel();
+        if (!this.synth) {
+            console.error('Speech synthesis not supported');
+            return;
+        }
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'id-ID'; // Set to Indonesian
-            utterance.rate = 1.0; // Normal speed
-            utterance.pitch = 1.0; // Normal pitch
-            utterance.volume = 1.0; // Full volume
+        // Cancel any ongoing speech
+        this.synth.cancel();
 
-            // Get available voices
-            const voices = this.synth.getVoices();
-            // Try to find Indonesian voice
-            const indonesianVoice = voices.find(voice => voice.lang.includes('id-ID'));
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Set language to Indonesian
+        utterance.lang = 'id-ID';
+        
+        // Configure speech parameters
+        utterance.rate = 1.0; // Normal speed
+        utterance.pitch = 1.0; // Normal pitch
+        utterance.volume = 1.0; // Full volume
+
+        // Try to find Indonesian voice
+        if (this.voices.length > 0) {
+            const indonesianVoice = this.voices.find(voice => 
+                voice.lang.includes('id-ID') || 
+                voice.lang.includes('id') || 
+                voice.name.includes('Indonesian')
+            );
+            
             if (indonesianVoice) {
+                console.log('Using Indonesian voice:', indonesianVoice.name);
                 utterance.voice = indonesianVoice;
+            } else {
+                console.log('No Indonesian voice found, using default');
             }
+        }
 
-            utterance.onstart = () => {
-                this.isSpeaking = true;
-            };
+        // Event handlers
+        utterance.onstart = () => {
+            console.log('Started speaking');
+            this.isSpeaking = true;
+        };
 
-            utterance.onend = () => {
-                this.isSpeaking = false;
-            };
+        utterance.onend = () => {
+            console.log('Finished speaking');
+            this.isSpeaking = false;
+        };
 
+        utterance.onerror = (event) => {
+            console.error('Speech synthesis error:', event);
+            this.isSpeaking = false;
+        };
+
+        // Speak the text
+        try {
             this.synth.speak(utterance);
+        } catch (error) {
+            console.error('Error speaking text:', error);
         }
     }
 
