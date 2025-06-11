@@ -447,7 +447,7 @@ class ChatBot {
                         method: "POST",
                         headers: { 
                             "Content-Type": "application/json",
-                            "Access-Control-Allow-Origin": "*",
+                            "Access-Control-Allow-Origin": "https://appstore.gugusdarmayanto.my.id",
                             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
                             "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
                         },
