@@ -2,8 +2,16 @@
 class ChatBot {
     constructor() {
         // Get existing session ID or create new one
-        this.currentSessionId = localStorage.getItem('chatbot_session_id') || Date.now().toString();
-        localStorage.setItem('chatbot_session_id', this.currentSessionId);
+        try {
+            this.currentSessionId = localStorage.getItem('chatbot_session_id');
+            if (!this.currentSessionId) {
+                this.currentSessionId = this.generateSessionId();
+                localStorage.setItem('chatbot_session_id', this.currentSessionId);
+            }
+        } catch (error) {
+            console.error('Error accessing localStorage:', error);
+            this.currentSessionId = this.generateSessionId();
+        }
         
         this.lastActivityTime = Date.now();
         this.chatHistory = [];
@@ -19,6 +27,12 @@ class ChatBot {
             this.loadChatHistory();
             this.startInactivityCheck();
         });
+    }
+
+    generateSessionId() {
+        const timestamp = Date.now().toString(36);
+        const randomStr = Math.random().toString(36).substring(2, 8);
+        return `${timestamp}-${randomStr}`;
     }
 
     async initDB() {
@@ -445,6 +459,7 @@ class ChatBot {
                     // Send message to webhook
                     const res = await fetch("https://hook.gugusdarmayanto.my.id/webhook/0a4ca5b0-3d99-43d8-abca-ad792570f670", {
                         method: "POST",
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify([{
                             sessionId: this.currentSessionId,
                             action: "sendMessage",
