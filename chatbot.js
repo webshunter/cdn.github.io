@@ -178,7 +178,17 @@ class ChatBot {
         this.chatHistory.forEach(msg => {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${msg.role}`;
-            messageDiv.textContent = msg.content;
+            
+            // Function to convert URLs to clickable links
+            const makeLinksClickable = (text) => {
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                return text.replace(urlRegex, url => {
+                    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                });
+            };
+
+            // Set the content with clickable links
+            messageDiv.innerHTML = makeLinksClickable(msg.content);
             this.messages.appendChild(messageDiv);
         });
         // Scroll to bottom after rendering
@@ -386,6 +396,7 @@ class ChatBot {
                 padding: 10px 15px;
                 border-radius: 15px 15px 15px 0;
                 border: 1px solid #90bada;
+                position: relative;
             }
 
             .message.bot ul {
@@ -516,12 +527,6 @@ class ChatBot {
                     console.error('Speech recognition error:', event.error);
                     this.isListening = false;
                     micButton.classList.remove('listening');
-                    
-                    // Show error message to user
-                    const errorMessage = document.createElement('div');
-                    errorMessage.className = 'message bot';
-                    errorMessage.textContent = "Maaf, terjadi kesalahan saat mengenali suara. Silakan coba lagi atau ketik pesan Anda.";
-                    this.messages.appendChild(errorMessage);
                 };
             } else {
                 micButton.style.display = 'none'; // Hide mic button if not supported
@@ -641,9 +646,6 @@ class ChatBot {
                 sendMessage();
             }
         });
-
-        // Initial render of chat history
-        this.renderChatHistory();
     }
 }
 
