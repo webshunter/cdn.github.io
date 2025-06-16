@@ -600,7 +600,17 @@ class ChatBot {
                     // Add bot response
                     const botMessage = document.createElement('div');
                     botMessage.className = 'message bot';
-                    botMessage.textContent = data[0]?.aiResponse || "Tidak ada balasan.";
+                    
+                    // Function to convert URLs to clickable links
+                    const makeLinksClickable = (text) => {
+                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                        return text.replace(urlRegex, url => {
+                            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                        });
+                    };
+
+                    // Set the content with clickable links
+                    botMessage.innerHTML = makeLinksClickable(data[0]?.aiResponse || "Tidak ada balasan.");
                     this.messages.appendChild(botMessage);
 
                     // Add to history
