@@ -181,9 +181,12 @@ class ChatBot {
             
             // Function to convert URLs to clickable links
             const makeLinksClickable = (text) => {
-                const urlRegex = /(https?:\/\/[^\s]+)/g;
-                return text.replace(urlRegex, url => {
-                    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                // Match URLs that might be wrapped in square brackets
+                const urlRegex = /\[?(https?:\/\/[^\s\]]+)\]?/g;
+                return text.replace(urlRegex, (match, url) => {
+                    // Remove square brackets if they exist
+                    const cleanUrl = url.replace(/[\[\]]/g, '');
+                    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${match}</a>`;
                 });
             };
 
@@ -603,9 +606,12 @@ class ChatBot {
                     
                     // Function to convert URLs to clickable links
                     const makeLinksClickable = (text) => {
-                        const urlRegex = /(https?:\/\/[^\s]+)/g;
-                        return text.replace(urlRegex, url => {
-                            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+                        // Match URLs that might be wrapped in square brackets
+                        const urlRegex = /\[?(https?:\/\/[^\s\]]+)\]?/g;
+                        return text.replace(urlRegex, (match, url) => {
+                            // Remove square brackets if they exist
+                            const cleanUrl = url.replace(/[\[\]]/g, '');
+                            return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${match}</a>`;
                         });
                     };
 
