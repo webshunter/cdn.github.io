@@ -616,11 +616,11 @@ class ChatBot {
                     };
 
                     // Set the content with clickable links
-                    botMessage.innerHTML = makeLinksClickable(data[0]?.aiResponse || "Tidak ada balasan.");
+                    botMessage.innerHTML = makeLinksClickable(data?.aiResponse || "Tidak ada balasan.");
                     this.messages.appendChild(botMessage);
 
                     // Add to history
-                    this.chatHistory.push({ role: 'bot', content: data[0]?.aiResponse || "Tidak ada balasan." });
+                    this.chatHistory.push({ role: 'bot', content: data?.aiResponse || "Tidak ada balasan." });
                     await this.saveChatHistory();
                 } catch (err) {
                     // Remove loading message
